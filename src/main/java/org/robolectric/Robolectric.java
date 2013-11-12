@@ -36,10 +36,6 @@ import android.content.res.Resources;
 import android.content.res.TypedArray;
 import android.database.ContentObserver;
 import android.database.CursorWrapper;
-import android.database.sqlite.SQLiteCursor;
-import android.database.sqlite.SQLiteProgram;
-import android.database.sqlite.SQLiteQueryBuilder;
-import android.database.sqlite.SQLiteStatement;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -295,7 +291,6 @@ import org.robolectric.shadows.ShadowTouchDelegate;
 import org.robolectric.shadows.ShadowTranslateAnimation;
 import org.robolectric.shadows.ShadowTypedArray;
 import org.robolectric.shadows.ShadowTypeface;
-import org.robolectric.shadows.ShadowUriMatcher;
 import org.robolectric.shadows.ShadowVideoView;
 import org.robolectric.shadows.ShadowView;
 import org.robolectric.shadows.ShadowViewAnimator;
@@ -920,10 +915,6 @@ public class Robolectric {
 
   public static ShadowTypeface shadowOf(Typeface instance) {
     return (ShadowTypeface) shadowOf_(instance);
-  }
-
-  public static ShadowUriMatcher shadowOf(UriMatcher instance) {
-    return (ShadowUriMatcher) shadowOf_(instance);
   }
 
   public static ShadowView shadowOf(View instance) {
