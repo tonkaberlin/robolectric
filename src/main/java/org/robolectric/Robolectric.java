@@ -271,6 +271,7 @@ import org.robolectric.shadows.ShadowResolveInfo;
 import org.robolectric.shadows.ShadowResourceCursorAdapter;
 import org.robolectric.shadows.ShadowResources;
 import org.robolectric.shadows.ShadowResultReceiver;
+import org.robolectric.shadows.ShadowSQLiteConnection;
 import org.robolectric.shadows.ShadowScaleGestureDetector;
 import org.robolectric.shadows.ShadowScanResult;
 import org.robolectric.shadows.ShadowScrollView;
@@ -1310,6 +1311,7 @@ public class Robolectric {
     ShadowStatFs.reset();
     ShadowTypeface.reset();
     ShadowCursorWindow.reset();
+    //ShadowSQLiteConnection.reset();
   }
 
   public static <T extends Activity> ActivityController<T> buildActivity(Class<T> activityClass) {
