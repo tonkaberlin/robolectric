@@ -27,6 +27,13 @@ public class SQLiteLibraryLoader {
 
   private static final String OS_WIN = "win", OS_LINUX = "linux", OS_MAC = "macos";
 
+  static LibraryNameMapper libraryNameMapper = new LibraryNameMapper() {
+    @Override
+    public String mapLibraryName(String name) {
+      return System.mapLibraryName(name);
+    }
+  };
+
   private static boolean loaded;
 
   private SQLiteLibraryLoader() { }
@@ -80,7 +87,7 @@ public class SQLiteLibraryLoader {
     }
   }
 
-  private static InputStream getLibraryStream() {
+  protected static InputStream getLibraryStream() {
     String classpathResourceName = getLibClasspathResourceName();
     InputStream libraryStream = SQLiteLibraryLoader.class.getResourceAsStream(classpathResourceName);
     if (libraryStream == null) {
@@ -130,7 +137,7 @@ public class SQLiteLibraryLoader {
   }
 
   private static String getLibName() {
-    return System.mapLibraryName("sqlite4java");
+    return libraryNameMapper.mapLibraryName("sqlite4java");
   }
 
   private static String md5sum(InputStream input) throws IOException {
@@ -175,6 +182,10 @@ public class SQLiteLibraryLoader {
       return OS_MAC;
     }
     throw new UnsupportedOperationException("Architecture '" + name + "' is not supported by SQLite library");
+  }
+
+  protected interface LibraryNameMapper {
+    String mapLibraryName(String name);
   }
 
 }
