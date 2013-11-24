@@ -28,6 +28,20 @@ public class SQLiteLibraryLoaderTest {
     SQLiteLibraryLoader.mustReload();
   }
 
+  @Before
+  public void saveSystemProperties() {
+    savedOs = System.getProperty("os.name");
+    savedArch = System.getProperty("os.arch");
+    savedMapper = SQLiteLibraryLoader.libraryNameMapper;
+  }
+
+  @After
+  public void restoreSystemProperties() {
+    System.setProperty("os.name", savedOs);
+    System.setProperty("os.arch", savedArch);
+    SQLiteLibraryLoader.libraryNameMapper = savedMapper;
+  }
+
   @Test
   public void shouldExtractNativeLibrary() {
     File extractedPath = SQLiteLibraryLoader.getNativeLibraryPath();
@@ -65,64 +79,62 @@ public class SQLiteLibraryLoaderTest {
     assertThat(extractedPath.length()).isGreaterThan(firstSize);
   }
 
-
-  @Before
-  public void saveSystemProperties() {
-    savedOs = System.getProperty("os.name");
-    savedArch = System.getProperty("os.arch");
-    savedMapper = SQLiteLibraryLoader.libraryNameMapper;
-  }
-
-  @After
-  public void restoreSystemProperties() {
-    System.setProperty("os.name", savedOs);
-    System.setProperty("os.arch", savedArch);
-    SQLiteLibraryLoader.libraryNameMapper = savedMapper;
-  }
-
   @Test
-  public void shouldFindLibraryForWindowsX86() throws IOException {
+  public void shouldFindLibraryForWindowsXPX86() throws IOException {
     SQLiteLibraryLoader.libraryNameMapper = new LibraryMapperTest("", "dll");
-    System.setProperty("os.name", "Windows XP");
-    System.setProperty("os.arch", "x86");
-    SQLiteLibraryLoader.getLibraryStream().close();
-    System.setProperty("os.name", "Windows 7");
-    System.setProperty("os.arch", "x86");
-    SQLiteLibraryLoader.getLibraryStream().close();
+    verifyLibraryLoads("Windows XP", "x86");
   }
 
   @Test
-  public void shouldFindLibraryForWindowsAmd64() throws IOException {
+  public void shouldFindLibraryForWindows7X86() throws IOException {
     SQLiteLibraryLoader.libraryNameMapper = new LibraryMapperTest("", "dll");
-    System.setProperty("os.name", "Windows XP");
-    System.setProperty("os.arch", "amd64");
-    SQLiteLibraryLoader.getLibraryStream().close();
-    System.setProperty("os.name", "Windows 7");
-    System.setProperty("os.arch", "amd64");
-    SQLiteLibraryLoader.getLibraryStream().close();
+    verifyLibraryLoads("Windows 7", "x86");
   }
 
   @Test
-  public void shouldFindLibraryForLinuxI386() throws IOException {
+  public void shouldFindLibraryForWindowsXPAmd64() throws IOException {
+    SQLiteLibraryLoader.libraryNameMapper = new LibraryMapperTest("", "dll");
+    verifyLibraryLoads("Windows XP", "amd64");
+  }
+
+  @Test
+  public void shouldFindLibraryForWindows7Amd64() throws IOException {
+    SQLiteLibraryLoader.libraryNameMapper = new LibraryMapperTest("", "dll");
+    verifyLibraryLoads("Windows 7", "amd64");
+  }
+
+  @Test
+  public void shouldFindLibraryForLinuxi386() throws IOException {
     SQLiteLibraryLoader.libraryNameMapper = new LibraryMapperTest("lib", "so");
-    System.setProperty("os.name", "Some linux version");
-    System.setProperty("os.arch", "i386");
-    SQLiteLibraryLoader.getLibraryStream().close();
+    verifyLibraryLoads("Some linux version", "i386");
   }
 
   @Test
   public void shouldFindLibraryForLinuxAmd64() throws IOException {
     SQLiteLibraryLoader.libraryNameMapper = new LibraryMapperTest("lib", "so");
-    System.setProperty("os.name", "Some linux version");
-    System.setProperty("os.arch", "amd64");
-    SQLiteLibraryLoader.getLibraryStream().close();
+    verifyLibraryLoads("Some linux version", "amd64");
   }
 
   @Test
   public void shouldFindLibraryForMacWithAnyArch() throws IOException {
     SQLiteLibraryLoader.libraryNameMapper = new LibraryMapperTest("lib", "jnilib");
-    System.setProperty("os.name", "Mac OS X");
-    System.setProperty("os.arch", "any architecture");
+    verifyLibraryLoads("Mac OS X", "any architecture");
+  }
+
+  @Test
+  public void shouldFindLibraryForMacWithAnyArchAndDyLibMapping() throws IOException {
+    SQLiteLibraryLoader.libraryNameMapper = new LibraryMapperTest("lib", "dylib");
+    verifyLibraryLoads("Mac OS X", "any architecture");
+  }
+
+  @Test(expected = UnsupportedOperationException.class)
+  public void shouldThrowExceptionIfUnknownNameAndArch() throws Exception {
+    SQLiteLibraryLoader.libraryNameMapper = new LibraryMapperTest("lib", "so");
+    verifyLibraryLoads("ACME Electronic", "FooBar2000");
+  }
+
+  private void verifyLibraryLoads(String name, String arch) throws IOException {
+    setNameAndArch(name, arch);
     SQLiteLibraryLoader.getLibraryStream().close();
   }
 
@@ -141,4 +153,8 @@ public class SQLiteLibraryLoaderTest {
     }
   }
 
+  private static void setNameAndArch(String name, String arch) {
+    System.setProperty("os.name", name);
+    System.setProperty("os.arch", arch);
+  }
 }

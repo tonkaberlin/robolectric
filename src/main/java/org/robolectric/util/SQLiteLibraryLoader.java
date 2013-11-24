@@ -24,10 +24,9 @@ import java.util.logging.Logger;
  * Initializes sqlite native libraries.
  */
 public class SQLiteLibraryLoader {
+  private static final String OS_WIN = "windows", OS_LINUX = "linux", OS_MAC = "mac";
 
-  private static final String OS_WIN = "win", OS_LINUX = "linux", OS_MAC = "macos";
-
-  static LibraryNameMapper libraryNameMapper = new LibraryNameMapper() {
+  protected static LibraryNameMapper libraryNameMapper = new LibraryNameMapper() {
     @Override
     public String mapLibraryName(String name) {
       return System.mapLibraryName(name);
@@ -88,8 +87,8 @@ public class SQLiteLibraryLoader {
   }
 
   protected static InputStream getLibraryStream() {
-    String classpathResourceName = getLibClasspathResourceName();
-    InputStream libraryStream = SQLiteLibraryLoader.class.getResourceAsStream(classpathResourceName);
+    final String classpathResourceName = getLibClasspathResourceName();
+    final InputStream libraryStream = SQLiteLibraryLoader.class.getResourceAsStream(classpathResourceName);
     if (libraryStream == null) {
       throw new RuntimeException("Cannot find '" + classpathResourceName + "' in classpath");
     }
@@ -102,7 +101,7 @@ public class SQLiteLibraryLoader {
       // for some reason the osx version is packaged as .jnilib
       libName = libName.replace("dylib", "jnilib");
     }
-    return "/natives/" + getNativesResourcesPathPart() + "/" + libName;
+    return "/" + getNativesResourcesPathPart() + "/" + libName;
   }
 
   private static void extractAndLoad(final InputStream input, final File output) {
@@ -159,33 +158,32 @@ public class SQLiteLibraryLoader {
   }
 
   private static String getNativesResourcesPathPart() {
-    String osName = getOsFolderName();
-    if (OS_MAC.equals(osName)) {
-      return osName;
-    }
-    return osName + "/" + getArchitectureFolderName();
+    return getOsPrefix() + "-" + getArchitectureSuffix();
   }
 
-  private static String getArchitectureFolderName() {
-    return System.getProperty("os.arch").toLowerCase(Locale.US).replaceAll("\\W", "");
-  }
-
-  private static String getOsFolderName() {
+  private static String getOsPrefix() {
     String name = System.getProperty("os.name").toLowerCase(Locale.US);
     if (name.contains("win")) {
       return OS_WIN;
-    }
-    if (name.contains("linux")) {
+    } else if (name.contains("linux")) {
       return OS_LINUX;
-    }
-    if (name.contains("mac")) {
+    } else if (name.contains("mac")) {
       return OS_MAC;
+    } else {
+      throw new UnsupportedOperationException("Architecture '" + name + "' is not supported by SQLite library");
     }
-    throw new UnsupportedOperationException("Architecture '" + name + "' is not supported by SQLite library");
+  }
+
+  private static String getArchitectureSuffix() {
+    String arch = System.getProperty("os.arch").toLowerCase(Locale.US).replaceAll("\\W", "");
+    if ("i386".equals(arch)) {
+      return "x86";
+    } else {
+      return "x86_64";
+    }
   }
 
   protected interface LibraryNameMapper {
     String mapLibraryName(String name);
   }
-
 }
