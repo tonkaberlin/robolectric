@@ -24,20 +24,36 @@ import java.util.logging.Logger;
  * Initializes sqlite native libraries.
  */
 public class SQLiteLibraryLoader {
+  private static SQLiteLibraryLoader instance;
+  private static final String SQLITE4JAVA = "sqlite4java";
   private static final String OS_WIN = "windows", OS_LINUX = "linux", OS_MAC = "mac";
 
-  protected static LibraryNameMapper libraryNameMapper = new LibraryNameMapper() {
+  private final LibraryNameMapper libraryNameMapper;
+  private boolean loaded;
+
+  protected SQLiteLibraryLoader() {
+    this(DEFAULT_MAPPER);
+  }
+
+  protected SQLiteLibraryLoader(LibraryNameMapper mapper) {
+    libraryNameMapper = mapper;
+  }
+
+  private static final LibraryNameMapper DEFAULT_MAPPER = new LibraryNameMapper() {
     @Override
     public String mapLibraryName(String name) {
       return System.mapLibraryName(name);
     }
   };
 
-  private static boolean loaded;
+  public static synchronized void load() {
+    if (instance == null) {
+      instance = new SQLiteLibraryLoader();
+    }
+    instance.doLoad();
+  }
 
-  private SQLiteLibraryLoader() { }
-
-  public static void load() {
+  protected void doLoad() {
     if (loaded) { return; }
 
     final long startTime = System.currentTimeMillis();
@@ -52,7 +68,7 @@ public class SQLiteLibraryLoader {
     logWithTime("SQLite natives prepared in", startTime);
   }
 
-  protected static File getNativeLibraryPath() {
+  protected File getNativeLibraryPath() {
     String tempPath = System.getProperty("java.io.tmpdir");
     if (tempPath == null) {
       throw new IllegalStateException("Java temporary directory is not defined (java.io.tmpdir)");
@@ -60,19 +76,32 @@ public class SQLiteLibraryLoader {
     return new File(Fs.fileFromPath(tempPath).join("robolectric-libs", getLibName()).getPath());
   }
 
-  protected static void mustReload() {
+  protected void mustReload() {
     loaded = false;
   }
 
-  private static void logWithTime(final String message, final long startTime) {
+  protected String getLibClasspathResourceName() {
+    return "/" + getNativesResourcesPathPart() + "/" + getLibName();
+  }
+
+  private InputStream getLibraryStream() {
+    final String classpathResourceName = getLibClasspathResourceName();
+    final InputStream libraryStream = SQLiteLibraryLoader.class.getResourceAsStream(classpathResourceName);
+    if (libraryStream == null) {
+      throw new RuntimeException("Cannot find '" + classpathResourceName + "' in classpath");
+    }
+    return libraryStream;
+  }
+
+  private void logWithTime(final String message, final long startTime) {
     log(message + " " + (System.currentTimeMillis() - startTime));
   }
 
-  private static void log(final String message) {
+  private void log(final String message) {
     System.out.println(message);
   }
 
-  private static boolean isExtractedLibUptodate(File extractedLib) {
+  private boolean isExtractedLibUptodate(File extractedLib) {
     if (extractedLib.exists()) {
       try {
         String existingMd5 = md5sum(new FileInputStream(extractedLib));
@@ -86,27 +115,11 @@ public class SQLiteLibraryLoader {
     }
   }
 
-  protected static InputStream getLibraryStream() {
-    final String classpathResourceName = getLibClasspathResourceName();
-    final InputStream libraryStream = SQLiteLibraryLoader.class.getResourceAsStream(classpathResourceName);
-    if (libraryStream == null) {
-      throw new RuntimeException("Cannot find '" + classpathResourceName + "' in classpath");
-    }
-    return libraryStream;
-  }
-
-  private static String getLibClasspathResourceName() {
-    String libName = getLibName();
-    if (libName.endsWith("dylib")) {
-      // for some reason the osx version is packaged as .jnilib
-      libName = libName.replace("dylib", "jnilib");
-    }
-    return "/" + getNativesResourcesPathPart() + "/" + libName;
-  }
-
-  private static void extractAndLoad(final InputStream input, final File output) {
+  private void extractAndLoad(final InputStream input, final File output) {
     File libPath = output.getParentFile();
-    libPath.mkdirs();
+    if (!libPath.exists() && !libPath.mkdirs()) {
+      throw new RuntimeException("could not create " + libPath);
+    }
 
     FileOutputStream outputStream = null;
     try {
@@ -122,7 +135,7 @@ public class SQLiteLibraryLoader {
     loadFromDirectory(libPath);
   }
 
-  private static void loadFromDirectory(final File libPath) {
+  private void loadFromDirectory(final File libPath) {
     // configure less verbose logging
     Logger.getLogger("com.almworks.sqlite4java").setLevel(Level.WARNING);
 
@@ -135,33 +148,21 @@ public class SQLiteLibraryLoader {
     loaded = true;
   }
 
-  private static String getLibName() {
-    return libraryNameMapper.mapLibraryName("sqlite4java");
-  }
-
-  private static String md5sum(InputStream input) throws IOException {
-    BufferedInputStream in = new BufferedInputStream(input);
-
-    try {
-      MessageDigest digest = java.security.MessageDigest.getInstance("MD5");
-      DigestInputStream digestInputStream = new DigestInputStream(in, digest);
-      while (digestInputStream.read() >= 0);
-      ByteArrayOutputStream md5out = new ByteArrayOutputStream();
-      md5out.write(digest.digest());
-      return new BigInteger(md5out.toByteArray()).toString();
-    } catch (NoSuchAlgorithmException e) {
-      throw new IllegalStateException("MD5 algorithm is not available: " + e);
-    }
-    finally {
-      in.close();
+  private String getLibName() {
+    final String libName = libraryNameMapper.mapLibraryName(SQLITE4JAVA);
+    if (libName.endsWith(".dylib")) {
+      // for some reason the sqlite4java osx version is packaged as .jnilib
+      return libName.replace(".dylib", ".jnilib");
+    } else {
+      return libName;
     }
   }
 
-  private static String getNativesResourcesPathPart() {
+  private String getNativesResourcesPathPart() {
     return getOsPrefix() + "-" + getArchitectureSuffix();
   }
 
-  private static String getOsPrefix() {
+  private String getOsPrefix() {
     String name = System.getProperty("os.name").toLowerCase(Locale.US);
     if (name.contains("win")) {
       return OS_WIN;
@@ -174,12 +175,30 @@ public class SQLiteLibraryLoader {
     }
   }
 
-  private static String getArchitectureSuffix() {
+  private String getArchitectureSuffix() {
     String arch = System.getProperty("os.arch").toLowerCase(Locale.US).replaceAll("\\W", "");
-    if ("i386".equals(arch)) {
+    if ("i386".equals(arch) || "x86".equals(arch)) {
       return "x86";
     } else {
       return "x86_64";
+    }
+  }
+
+  private String md5sum(InputStream input) throws IOException {
+    BufferedInputStream in = new BufferedInputStream(input);
+
+    try {
+      MessageDigest digest = java.security.MessageDigest.getInstance("MD5");
+      DigestInputStream digestInputStream = new DigestInputStream(in, digest);
+      while (digestInputStream.read() >= 0) ;
+      ByteArrayOutputStream md5out = new ByteArrayOutputStream();
+      md5out.write(digest.digest());
+      return new BigInteger(md5out.toByteArray()).toString();
+    } catch (NoSuchAlgorithmException e) {
+      throw new IllegalStateException("MD5 algorithm is not available: " + e);
+    }
+    finally {
+      in.close();
     }
   }
 
