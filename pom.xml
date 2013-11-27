@@ -17,6 +17,10 @@
   <description>An alternative Android testing framework.</description>
   <url>http://robolectric.org/</url>
 
+  <properties>
+      <libsqlite.version>0.282-3</libsqlite.version>
+  </properties>
+
   <dependencies>
     <dependency>
       <groupId>junit</groupId>
@@ -41,32 +45,32 @@
     <dependency>
       <groupId>com.github.axet.litedb</groupId>
       <artifactId>libsqlite</artifactId>
+      <version>${libsqlite.version}</version>
       <classifier>natives-windows-x86</classifier>
-      <version>0.282-3</version>
       <scope>provided</scope>
     </dependency>
 
     <dependency>
       <groupId>com.github.axet.litedb</groupId>
       <artifactId>libsqlite</artifactId>
+      <version>${libsqlite.version}</version>
       <classifier>natives-windows-x86_64</classifier>
-      <version>0.282-3</version>
       <scope>provided</scope>
     </dependency>
 
     <dependency>
       <groupId>com.github.axet.litedb</groupId>
       <artifactId>libsqlite</artifactId>
+      <version>${libsqlite.version}</version>
       <classifier>natives-mac-x86_64</classifier>
-      <version>0.282-3</version>
       <scope>provided</scope>
     </dependency>
 
     <dependency>
       <groupId>com.github.axet.litedb</groupId>
       <artifactId>libsqlite</artifactId>
+      <version>${libsqlite.version}</version>
       <classifier>natives-linux-x86</classifier>
-      <version>0.282-3</version>
       <scope>provided</scope>
     </dependency>
 
@@ -74,7 +78,7 @@
       <groupId>com.github.axet.litedb</groupId>
       <artifactId>libsqlite</artifactId>
       <classifier>natives-linux-x86_64</classifier>
-      <version>0.282-3</version>
+      <version>${libsqlite.version}</version>
       <scope>provided</scope>
     </dependency>
 
