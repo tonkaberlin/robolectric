@@ -58,7 +58,7 @@ public class SdkConfig {
         realAndroidDependency("android-all"),
         createDependency("org.json", "json", "20080701", "jar", false),
         createDependency("org.ccil.cowan.tagsoup", "tagsoup", "1.2", "jar", false),
-        createDependency("com.android.support", "support-v4", "19.0.0", "jar", true)
+        createDependency("com.android.support", "support-v4", "21.0.0", "jar", true)
     };
   }
 
