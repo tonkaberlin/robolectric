@@ -2,6 +2,7 @@ package org.robolectric.shadows;
 
 import android.content.IntentFilter;
 import android.net.Uri;
+import org.robolectric.Robolectric;
 import org.robolectric.annotation.Implementation;
 import org.robolectric.annotation.Implements;
 
@@ -32,6 +33,7 @@ public class ShadowIntentFilter {
   List<String> types = new ArrayList<String>();
   List<IntentFilter.AuthorityEntry> authoritites = new ArrayList<IntentFilter.AuthorityEntry>();
   List<String> categories = new ArrayList<String>();
+  int priority;
 
   public void __constructor__(String action) {
     actions.add(action);
@@ -39,6 +41,26 @@ public class ShadowIntentFilter {
 
   public void __constructor__(String action, String dataType) {
     actions.add(action);
+  }
+
+  public void __constructor__(IntentFilter filter) {
+    ShadowIntentFilter shadow = Robolectric.shadowOf_(filter);
+    actions = new ArrayList<String>(shadow.actions);
+    schemes = new ArrayList<String>(shadow.schemes);
+    types = new ArrayList<String>(shadow.types);
+    authoritites = new ArrayList<IntentFilter.AuthorityEntry>(shadow.authoritites);
+    categories = new ArrayList<String>(shadow.categories);
+    priority = shadow.priority;
+  }
+
+  @Implementation
+  public void setPriority(int priority) {
+    this.priority = priority;
+  }
+
+  @Implementation
+  public int getPriority() {
+    return priority;
   }
 
   @Implementation
@@ -97,8 +119,23 @@ public class ShadowIntentFilter {
   }
 
   @Implementation
-  public void addDataType(String type) {
-    types.add(type);
+  public void addDataType(String type) throws IntentFilter.MalformedMimeTypeException {
+    final int slashpos = type.indexOf('/');
+    final int typelen = type.length();
+    if (slashpos > 0 && typelen >= slashpos+2) {
+      if (typelen == slashpos+2 && type.charAt(slashpos+1) == '*') {
+        String str = type.substring(0, slashpos);
+        if (!types.contains(str)) {
+          types.add(str.intern());
+        }
+      } else {
+        if (!types.contains(type)) {
+          types.add(type.intern());
+        }
+      }
+      return;
+    }
+    throw new IntentFilter.MalformedMimeTypeException(type);
   }
 
   @Implementation
@@ -108,7 +145,40 @@ public class ShadowIntentFilter {
 
   @Implementation
   public boolean hasDataType(String type) {
-    return types.contains(type);
+    final List<String> t = types;
+    if (type == null) {
+      return false;
+    }
+    if (t.contains(type)) {
+      return true;
+    }
+    // Deal with an Intent wanting to match every type in the IntentFilter.
+    final int typeLength = type.length();
+    if (typeLength == 3 && type.equals("*/*")) {
+      return !t.isEmpty();
+    }
+    // Deal with this IntentFilter wanting to match every Intent type.
+    if (t.contains("*")) {
+      return true;
+    }
+    final int slashpos = type.indexOf('/');
+    if (slashpos > 0) {
+      if (t.contains(type.substring(0, slashpos))) {
+        return true;
+      }
+      if (typeLength == slashpos + 2 && type.charAt(slashpos + 1) == '*') {
+        // Need to look through all types for one that matches
+        // our base...
+        final int numTypes = t.size();
+        for (int i = 0; i < numTypes; i++) {
+          final String v = t.get(i);
+          if (type.regionMatches(0, v, 0, slashpos + 1)) {
+            return true;
+          }
+        }
+      }
+    }
+    return false;
   }
 
   @Implementation

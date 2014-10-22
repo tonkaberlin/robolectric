@@ -1,5 +1,6 @@
 package org.robolectric.shadows;
 
+import android.content.Intent;
 import android.content.IntentFilter;
 import android.net.Uri;
 import org.junit.Test;
@@ -10,6 +11,21 @@ import static org.fest.assertions.api.Assertions.assertThat;
 
 @RunWith(TestRunners.WithDefaults.class)
 public class IntentFilterTest {
+  @Test
+  public void copyConstructorTest() throws Exception {
+    String action = "test";
+    IntentFilter intentFilter = new IntentFilter(action);
+    IntentFilter copy = new IntentFilter(intentFilter);
+    assertThat(copy.hasAction("test"));
+  }
+
+  @Test
+  public void setsPriority() throws Exception {
+    IntentFilter filter = new IntentFilter();
+    filter.setPriority(123);
+    assertThat(filter.getPriority()).isEqualTo(123);
+  }
+
   @Test
   public void addDataScheme_shouldAddTheDataScheme() throws Exception {
     IntentFilter intentFilter = new IntentFilter();
@@ -48,13 +64,13 @@ public class IntentFilterTest {
 
     assertThat(intentFilter.hasAction("test")).isTrue();
   }
-  
+
   @Test
   public void hasDataScheme() {
     IntentFilter intentFilter = new IntentFilter();
     assertThat(intentFilter.hasDataScheme("test")).isFalse();
     intentFilter.addDataScheme("test");
-  
+
     assertThat(intentFilter.hasDataScheme("test")).isTrue();
   }
 
@@ -193,5 +209,29 @@ public class IntentFilterTest {
     Uri uriTest1 = Uri.parse("http://testHost1:1");
     assertThat(intentFilter.matchData("image/test", "http", uriTest1))
         .isLessThan(0);
+  }
+
+  @Test
+  public void matchData_MatchesPartialType() throws IntentFilter.MalformedMimeTypeException {
+    IntentFilter intentFilter = new IntentFilter();
+    intentFilter.addDataScheme("content");
+    intentFilter.addDataType("image/*");
+
+    Uri uri = Uri.parse("content://authority/images");
+    assertThat(intentFilter.matchData("image/test", "content", uri)).isGreaterThanOrEqualTo(0);
+    assertThat(intentFilter.matchData("video/test", "content", uri)).isLessThan(0);
+  }
+
+  @Test
+  public void matchData_MatchesAnyTypeAndSubtype() throws IntentFilter.MalformedMimeTypeException {
+    IntentFilter intentFilter = new IntentFilter();
+    intentFilter.addDataScheme("content");
+    intentFilter.addDataType("*/*");
+
+    Uri uri = Uri.parse("content://authority/images");
+    assertThat(intentFilter.matchData("image/test", "content", uri)).isGreaterThanOrEqualTo(0);
+    assertThat(intentFilter.matchData("image/*", "content", uri)).isGreaterThanOrEqualTo(0);
+    assertThat(intentFilter.matchData("video/test", "content", uri)).isGreaterThanOrEqualTo(0);
+    assertThat(intentFilter.matchData("video/*", "content", uri)).isGreaterThanOrEqualTo(0);
   }
 }

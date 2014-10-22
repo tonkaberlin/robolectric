@@ -40,6 +40,10 @@ import static android.content.pm.ApplicationInfo.FLAG_TEST_ONLY;
 import static android.content.pm.ApplicationInfo.FLAG_VM_SAFE_MODE;
 
 public class AndroidManifest {
+  public static final String DEFAULT_MANIFEST_NAME = "AndroidManifest.xml";
+  public static final String DEFAULT_RES_FOLDER = "res";
+  public static final String DEFAULT_ASSETS_FOLDER = "assets";
+
   private final FsFile androidManifestFile;
   private final FsFile resDirectory;
   private final FsFile assetsDirectory;
@@ -62,6 +66,7 @@ public class AndroidManifest {
   private final Map<String, ActivityData> activityDatas = new LinkedHashMap<String, ActivityData>();
   private final List<String> usedPermissions = new ArrayList<String>();
   private MetaData applicationMetaData;
+  private List<FsFile> libraryDirectories;
   private List<AndroidManifest> libraryManifests;
 
   /**
@@ -77,14 +82,15 @@ public class AndroidManifest {
   }
 
   public AndroidManifest(final FsFile androidManifestFile, final FsFile resDirectory) {
-    this(androidManifestFile, resDirectory, resDirectory.getParent().join("assets"));
+    this(androidManifestFile, resDirectory, resDirectory.getParent().join(DEFAULT_ASSETS_FOLDER));
   }
 
   /**
    * @deprecated Use {@link #AndroidManifest(org.robolectric.res.FsFile, org.robolectric.res.FsFile, org.robolectric.res.FsFile)} instead.}
    */
   public AndroidManifest(final FsFile baseDir) {
-    this(baseDir.join("AndroidManifest.xml"), baseDir.join("res"), baseDir.join("assets"));
+    this(baseDir.join(DEFAULT_MANIFEST_NAME), baseDir.join(DEFAULT_RES_FOLDER),
+        baseDir.join(DEFAULT_ASSETS_FOLDER));
   }
 
   /**
@@ -129,44 +135,51 @@ public class AndroidManifest {
     }
   }
 
-  void parseAndroidManifest() {
+  public void parseAndroidManifest() {
     if (manifestIsParsed) {
       return;
     }
     DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+
+    Document manifestDocument = null;
     try {
       DocumentBuilder db = dbf.newDocumentBuilder();
       InputStream inputStream = androidManifestFile.getInputStream();
-      Document manifestDocument = db.parse(inputStream);
+      manifestDocument = db.parse(inputStream);
       inputStream.close();
-
-      if (packageName == null) {
-        packageName = getTagAttributeText(manifestDocument, "manifest", "package");
-      }
-      versionCode = getTagAttributeIntValue(manifestDocument, "manifest", "android:versionCode", 0);
-      versionName = getTagAttributeText(manifestDocument, "manifest", "android:versionName");
-      rClassName = packageName + ".R";
-      applicationName = getTagAttributeText(manifestDocument, "application", "android:name");
-      applicationLabel = getTagAttributeText(manifestDocument, "application", "android:label");
-      minSdkVersion = getTagAttributeIntValue(manifestDocument, "uses-sdk", "android:minSdkVersion");
-      targetSdkVersion = getTagAttributeIntValue(manifestDocument, "uses-sdk", "android:targetSdkVersion");
-      processName = getTagAttributeText(manifestDocument, "application", "android:process");
-      if (processName == null) {
-        processName = packageName;
-      }
-
-      themeRef = getTagAttributeText(manifestDocument, "application", "android:theme");
-      labelRef = getTagAttributeText(manifestDocument, "application", "android:label");
-
-      parseApplicationFlags(manifestDocument);
-      parseReceivers(manifestDocument);
-      parseActivities(manifestDocument);
-      parseApplicationMetaData(manifestDocument);
-      parseContentProviders(manifestDocument);
-      parseUsedPermissions(manifestDocument);
     } catch (Exception ignored) {
       ignored.printStackTrace();
     }
+
+    if(manifestDocument.getElementsByTagName("application").item(0) == null) {
+      throw new IllegalArgumentException("Missing required <application/> element in " + androidManifestFile.getPath());
+    }
+
+    if (packageName == null) {
+      packageName = getTagAttributeText(manifestDocument, "manifest", "package");
+    }
+    versionCode = getTagAttributeIntValue(manifestDocument, "manifest", "android:versionCode", 0);
+    versionName = getTagAttributeText(manifestDocument, "manifest", "android:versionName");
+    rClassName = packageName + ".R";
+    applicationName = getTagAttributeText(manifestDocument, "application", "android:name");
+    applicationLabel = getTagAttributeText(manifestDocument, "application", "android:label");
+    minSdkVersion = getTagAttributeIntValue(manifestDocument, "uses-sdk", "android:minSdkVersion");
+    targetSdkVersion = getTagAttributeIntValue(manifestDocument, "uses-sdk", "android:targetSdkVersion");
+    processName = getTagAttributeText(manifestDocument, "application", "android:process");
+    if (processName == null) {
+      processName = packageName;
+    }
+
+    themeRef = getTagAttributeText(manifestDocument, "application", "android:theme");
+    labelRef = getTagAttributeText(manifestDocument, "application", "android:label");
+
+    parseApplicationFlags(manifestDocument);
+    parseReceivers(manifestDocument);
+    parseActivities(manifestDocument);
+    parseApplicationMetaData(manifestDocument);
+    parseContentProviders(manifestDocument);
+    parseUsedPermissions(manifestDocument);
+
     manifestIsParsed = true;
   }
 
@@ -221,25 +234,44 @@ public class AndroidManifest {
     if (application == null) return;
 
     for (Node activityNode : getChildrenTags(application, "activity")) {
-      final NamedNodeMap attributes = activityNode.getAttributes();
-      final int attrCount = attributes.getLength();
-      final List<IntentFilterData> intentFilterData = parseIntentFilters(activityNode);
-      final HashMap<String, String> activityAttrs = new HashMap<String, String>(attrCount);
-      for(int i = 0; i < attrCount; i++) {
-        Node attr = attributes.item(i);
-        String v = attr.getNodeValue();
-        if( v != null) {
-          activityAttrs.put(attr.getNodeName(), v);
-        }
-      }
-
-      String activityName = resolveClassRef(activityAttrs.get(ActivityData.getNameAttr("android")));
-      if (activityName == null) {
-        continue;
-      }
-      activityAttrs.put(ActivityData.getNameAttr("android"), activityName);
-      activityDatas.put(activityName, new ActivityData(activityAttrs, intentFilterData));
+      parseActivity(activityNode, false);
     }
+
+    for (Node activityNode : getChildrenTags(application, "activity-alias")) {
+      parseActivity(activityNode, true);
+    }
+  }
+
+  private void parseActivity(Node activityNode, boolean isAlias) {
+    final NamedNodeMap attributes = activityNode.getAttributes();
+    final int attrCount = attributes.getLength();
+    final List<IntentFilterData> intentFilterData = parseIntentFilters(activityNode);
+    final HashMap<String, String> activityAttrs = new HashMap<String, String>(attrCount);
+    for(int i = 0; i < attrCount; i++) {
+      Node attr = attributes.item(i);
+      String v = attr.getNodeValue();
+      if( v != null) {
+        activityAttrs.put(attr.getNodeName(), v);
+      }
+    }
+
+    String activityName = resolveClassRef(activityAttrs.get(ActivityData.getNameAttr("android")));
+    if (activityName == null) {
+      return;
+    }
+    ActivityData targetActivity = null;
+    if (isAlias) {
+      String targetName = resolveClassRef(activityAttrs.get(ActivityData.getTargetAttr("android")));
+      if (activityName == null) {
+        return;
+      }
+      // The target activity should have been parsed already so if it exists we should find it in
+      // activityDatas.
+      targetActivity = activityDatas.get(targetName);
+      activityAttrs.put(ActivityData.getTargetAttr("android"), targetName);
+    }
+    activityAttrs.put(ActivityData.getNameAttr("android"), activityName);
+    activityDatas.put(activityName, new ActivityData("android", activityAttrs, intentFilterData, targetActivity));
   }
 
   private List<IntentFilterData> parseIntentFilters(final Node activityNode) {
@@ -361,6 +393,7 @@ public class AndroidManifest {
    */
   public void initMetaData(ResourceLoader resLoader) {
     applicationMetaData.init(resLoader, packageName);
+
     for (ReceiverAndIntentFilter receiver : receivers) {
       receiver.metaData.init(resLoader, packageName);
     }
@@ -498,11 +531,17 @@ public class AndroidManifest {
     return providers;
   }
 
+  public void setLibraryDirectories(List<FsFile> libraryDirectories) {
+    this.libraryDirectories = libraryDirectories;
+  }
+
   protected void createLibraryManifests() {
     libraryManifests = new ArrayList<AndroidManifest>();
-    List<FsFile> libraryBaseDirs = findLibraries();
+    if (libraryDirectories == null) {
+      libraryDirectories = findLibraries();
+    }
 
-    for (FsFile libraryBaseDir : libraryBaseDirs) {
+    for (FsFile libraryBaseDir : libraryDirectories) {
       AndroidManifest libraryManifest = createLibraryAndroidManifest(libraryBaseDir);
       libraryManifest.createLibraryManifests();
       libraryManifests.add(libraryManifest);

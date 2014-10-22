@@ -28,6 +28,32 @@ public class NotificationBuilderTest {
   }
 
   @Test
+  public void build_whenSetOngoingNotSet_leavesSetOngoingAsFalse() {
+    build();
+    assertThat(s.isOngoing()).isFalse();
+  }
+
+  @Test
+  public void build_whenSetOngoing_setsOngoingToTrue() {
+    builder.setOngoing(true);
+    build();
+    assertThat(s.isOngoing()).isTrue();
+  }
+
+  @Test
+  public void build_whenShowWhenNotSet_setsShowWhenOnNotificationToTrue() {
+    build();
+    assertThat(s.isWhenShown()).isTrue();
+  }
+
+  @Test
+  public void build_setShowWhenOnNotification() {
+    builder.setShowWhen(false);
+    build();
+    assertThat(s.isWhenShown()).isFalse();
+  }
+
+  @Test
   public void build_setsContentTextOnNotification() throws Exception {
     builder.setContentText("Hello Text");
     build();

@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Parcel;
 import android.os.Parcelable;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -28,6 +29,7 @@ import static android.content.Intent.FILL_IN_CATEGORIES;
 import static android.content.Intent.FILL_IN_COMPONENT;
 import static android.content.Intent.FILL_IN_DATA;
 import static android.content.Intent.FILL_IN_PACKAGE;
+import static org.robolectric.Robolectric.directlyOn;
 import static org.robolectric.Robolectric.shadowOf;
 
 @SuppressWarnings({"UnusedDeclaration"})
@@ -47,6 +49,7 @@ public class ShadowIntent {
 
   public void __constructor__(String action, Uri uri, Context packageContext, Class cls) {
     componentName = new ComponentName(packageContext, cls);
+    data = uri;
     intentClass = cls;
     RobolectricInternals.getConstructor(Intent.class, realIntent, String.class, Uri.class, Context.class, Class.class).invoke(action, uri, packageContext, cls);
   }
@@ -66,6 +69,47 @@ public class ShadowIntent {
   public void __constructor__(String action) {
     __constructor__(action, null);
     RobolectricInternals.getConstructor(Intent.class, realIntent, String.class).invoke(action);
+  }
+
+  public void __constructor__(Parcel in) {
+    __constructor__(in.readString());
+    data = Uri.CREATOR.createFromParcel(in);
+    type = in.readString();
+    flags = in.readInt();
+    packageName = in.readString();
+    componentName = ComponentName.readFromParcel(in);
+
+    int N = in.readInt();
+    if (N > 0) {
+      int i;
+      for (i=0; i<N; i++) {
+        categories.add(in.readString());
+      }
+    }
+
+    extras.putAll(in.readBundle());
+  }
+
+  @Implementation
+  public void writeToParcel(Parcel out, int flags) {
+    out.writeString(action);
+    Uri.writeToParcel(out, data);
+    out.writeString(type);
+    out.writeInt(this.flags);
+    out.writeString(packageName);
+    ComponentName.writeToParcel(componentName, out);
+
+    if (categories != null) {
+      final int N = categories.size();
+      out.writeInt(N);
+      for (String s : categories) {
+        out.writeString(s);
+      }
+    } else {
+      out.writeInt(0);
+    }
+
+    out.writeBundle(extras);
   }
 
   public void __constructor__(Intent intent) {
@@ -160,6 +204,11 @@ public class ShadowIntent {
   }
 
   @Implementation
+  public String getScheme() {
+      return data != null ? data.getScheme() : null;
+  }
+
+  @Implementation
   public String getDataString() {
     if (data != null) {
       return data.toString();
@@ -234,6 +283,18 @@ public class ShadowIntent {
   }
 
   @Implementation
+  public Intent putExtra(String key, char value) {
+    extras.putChar(key, value);
+    return realIntent;
+  }
+
+  @Implementation
+  public Intent putExtra(String key, byte value) {
+    extras.putByte(key, value);
+    return realIntent;
+  }
+
+  @Implementation
   public Intent putExtra(String key, int value) {
     extras.putInt(key, value);
     return realIntent;
@@ -242,6 +303,12 @@ public class ShadowIntent {
   @Implementation
   public Intent putExtra(String key, double value) {
     extras.putDouble(key, value);
+    return realIntent;
+  }
+
+  @Implementation
+  public Intent putExtra(String key, short value) {
+    extras.putShort(key, value);
     return realIntent;
   }
 
@@ -259,7 +326,7 @@ public class ShadowIntent {
 
   @Implementation
   public Intent putExtra(String key, Serializable value) {
-    extras.putSerializable(key, serializeCycle(value));
+    extras.putSerializable(key, value);
     return realIntent;
   }
 
@@ -300,6 +367,18 @@ public class ShadowIntent {
   }
 
   @Implementation
+  public Intent putExtra(String key, boolean[] value) {
+    extras.putBooleanArray(key, value);
+    return realIntent;
+  }
+
+  @Implementation
+  public Intent putExtra(String key, char[] value) {
+    extras.putCharArray(key, value);
+    return realIntent;
+  }
+
+  @Implementation
   public Intent putExtra(String key, int[] value) {
     extras.putIntArray(key, value);
     return realIntent;
@@ -309,6 +388,34 @@ public class ShadowIntent {
   public Intent putExtra(String key, long[] value) {
     extras.putLongArray(key, value);
     return realIntent;
+  }
+
+  @Implementation
+  public Intent putExtra(String key, float[] value) {
+    extras.putFloatArray(key, value);
+    return realIntent;
+  }
+
+  @Implementation
+  public Intent putExtra(String key, double[] value) {
+    extras.putDoubleArray(key, value);
+    return realIntent;
+  }
+
+  @Implementation
+  public Intent putExtra(String key, short[] value) {
+    extras.putShortArray(key, value);
+    return realIntent;
+  }
+
+  @Implementation
+  public char[] getCharArrayExtra(String name) {
+    return extras.getCharArray(name);
+  }
+
+  @Implementation
+  public boolean[] getBooleanArrayExtra(String name) {
+    return extras.getBooleanArray(name);
   }
 
   @Implementation
@@ -322,6 +429,21 @@ public class ShadowIntent {
   }
 
   @Implementation
+  public float[] getFloatArrayExtra(String name) {
+    return extras.getFloatArray(name);
+  }
+
+  @Implementation
+  public double[] getDoubleArrayExtra(String name) {
+    return extras.getDoubleArray(name);
+  }
+
+  @Implementation
+  public short[] getShortArrayExtra(String name) {
+    return extras.getShortArray(name);
+  }
+
+  @Implementation
   public boolean getBooleanExtra(String name, boolean defaultValue) {
     return extras.getBoolean(name, defaultValue);
   }
@@ -329,6 +451,16 @@ public class ShadowIntent {
   @Implementation
   public String[] getStringArrayExtra(String name) {
     return extras.getStringArray(name);
+  }
+
+  @Implementation
+  public CharSequence[] getCharSequenceArrayExtra(String name) {
+    return extras.getCharSequenceArray(name);
+  }
+
+  @Implementation
+  public ArrayList<CharSequence> getCharSequenceArrayListExtra(String name) {
+    return extras.getCharSequenceArrayList(name);
   }
 
   @Implementation
@@ -343,13 +475,26 @@ public class ShadowIntent {
   }
 
   @Implementation
-  public void putExtra(String key, byte[] value) {
+  public Intent putExtra(String key, byte[] value) {
     extras.putByteArray(key, value);
+    return realIntent;
   }
 
   @Implementation
   public Intent putStringArrayListExtra(String key, ArrayList<String> value) {
     extras.putStringArrayList(key, value);
+    return realIntent;
+  }
+
+  @Implementation
+  public Intent putExtra(String key, CharSequence[] value) {
+    extras.putCharSequenceArray(key, value);
+    return realIntent;
+  }
+
+  @Implementation
+  public Intent putCharSequenceArrayListExtra(String key, ArrayList<CharSequence> value) {
+    extras.putCharSequenceArrayList(key, value);
     return realIntent;
   }
 
@@ -401,6 +546,16 @@ public class ShadowIntent {
   }
 
   @Implementation
+  public byte getByteExtra(String name, byte defaultValue) {
+    return extras.getByte(name, defaultValue);
+  }
+
+  @Implementation
+  public char getCharExtra(String name, char defaultValue) {
+    return extras.getChar(name, defaultValue);
+  }
+
+  @Implementation
   public int getIntExtra(String name, int defaultValue) {
     return extras.getInt(name, defaultValue);
   }
@@ -413,6 +568,11 @@ public class ShadowIntent {
   @Implementation
   public double getDoubleExtra(String name, double defaultValue) {
     return extras.getDouble(name, defaultValue);
+  }
+
+  @Implementation
+  public short getShortExtra(String name, short defaultValue) {
+    return extras.getShort(name, defaultValue);
   }
 
   @Implementation
@@ -636,23 +796,6 @@ public class ShadowIntent {
             ifWeHave(type, "type")
         ) +
         '}';
-  }
-
-  private Serializable serializeCycle(Serializable serializable) {
-    try {
-      ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-      ObjectOutputStream output = new ObjectOutputStream(byteArrayOutputStream);
-      output.writeObject(serializable);
-      output.close();
-
-      byte[] bytes = byteArrayOutputStream.toByteArray();
-      ObjectInputStream input = new ObjectInputStream(new ByteArrayInputStream(bytes));
-      return (Serializable) input.readObject();
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    } catch (ClassNotFoundException e) {
-      throw new RuntimeException(e);
-    }
   }
 
   private String ifWeHave(Object o, String name) {

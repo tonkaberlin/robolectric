@@ -5,12 +5,14 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.annotation.Config;
 import org.robolectric.res.ActivityData;
 import org.robolectric.res.Fs;
+import org.robolectric.res.FsFile;
 import org.robolectric.res.IntentFilterData;
 import org.robolectric.res.ResourcePath;
 import org.robolectric.test.TemporaryFolder;
@@ -41,6 +43,7 @@ import static java.util.Arrays.asList;
 import static org.fest.assertions.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import static org.robolectric.util.TestUtil.*;
 
 @RunWith(RobolectricTestRunner.class)
@@ -86,6 +89,12 @@ public class AndroidManifestTest {
 
     assertEquals("com.foo.Receiver", config.getReceiverClassName(6));
     assertEquals("org.robolectric.ACTION_DIFFERENT_PACKAGE", config.getReceiverIntentFilterActions(6).get(0));
+  }
+
+  @Test(expected = IllegalArgumentException.class)
+  public void testManifestWithNoApplicationElement() throws Exception {
+    AndroidManifest config = newConfig("TestAndroidManifestNoApplicationElement.xml");
+    config.parseAndroidManifest();
   }
 
   @Test
@@ -300,6 +309,14 @@ public class AndroidManifestTest {
   }
 
   @Test
+  public void shouldReadActivityAliases() throws Exception {
+    AndroidManifest config = newConfig("TestAndroidManifestForActivityAliases.xml");
+    assertThat(config.getActivityDatas()).hasSize(2);
+    assertThat(config.getActivityDatas()).containsKey("org.robolectric.shadows.TestActivity");
+    assertThat(config.getActivityDatas()).containsKey("org.robolectric.shadows.TestActivityAlias");
+  }
+
+  @Test
   public void shouldReadIntentFilterWithData() {
     AndroidManifest appManifest = newConfig("TestAndroidManifestForActivitiesWithIntentFilterWithData.xml");
     appManifest.getMinSdkVersion(); // Force parsing
@@ -350,6 +367,7 @@ public class AndroidManifestTest {
             "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"\n" +
             "          package=\"org.robolectric\">\n" +
             "    <uses-sdk " + usesSdkAttrs + "/>\n" +
+            "<application/>" +
             "</manifest>\n");
     return new AndroidManifest(Fs.newFile(f), null, null);
   }
@@ -391,5 +409,17 @@ public class AndroidManifestTest {
     @Override
     public void onReceive(Context context, Intent intent) {
     }
+  }
+
+  @Test
+  public void shouldLoadLibraryManifests() throws Exception {
+    AndroidManifest manifest = newConfig("TestAndroidManifest.xml");
+    List<FsFile> libraries = new ArrayList<FsFile>();
+    libraries.add(resourceFile("lib1"));
+    manifest.setLibraryDirectories(libraries);
+
+    List<AndroidManifest> libraryManifests = manifest.getLibraryManifests();
+    assertEquals(1, libraryManifests.size());
+    assertEquals("org.robolectric.lib1", libraryManifests.get(0).getPackageName());
   }
 }

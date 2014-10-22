@@ -26,6 +26,9 @@ public class ShadowNotification {
   private CharSequence contentInfo;
   private int smallIcon;
   private long when;
+  private boolean ongoing;
+  private boolean showWhen;
+
   private ArrayList<Notification.Action> actions = new ArrayList<Notification.Action>(MAX_ACTIONS);
 
   private Style style;
@@ -55,12 +58,20 @@ public class ShadowNotification {
     return contentText;
   }
 
+  public boolean isOngoing() {
+    return ongoing;
+  }
+
   public int getSmallIcon() {
     return smallIcon;
   }
 
   public long getWhen() {
     return when;
+  }
+
+  public boolean isWhenShown() {
+    return showWhen;
   }
 
   public Style getStyle() {
@@ -83,12 +94,20 @@ public class ShadowNotification {
     this.contentText = contentText;
   }
 
+  public void setOngoing(boolean ongoing) {
+    this.ongoing = ongoing;
+  }
+
   public void setSmallIcon(int icon) {
     this.smallIcon = icon;
   }
 
   public void setWhen(long when) {
     this.when = when;
+  }
+
+  public void setShowWhen(boolean showWhen) {
+    this.showWhen = showWhen;
   }
 
   public CharSequence getTicker() {
@@ -183,7 +202,9 @@ public class ShadowNotification {
     private CharSequence contentText;
     private CharSequence ticker;
     private int smallIcon;
+    private boolean ongoing;
     private long when;
+    private boolean showWhen = true;
     private ArrayList<Notification.Action> actions =
         new ArrayList<Notification.Action>(MAX_ACTIONS);
     private Style style;
@@ -211,11 +232,13 @@ public class ShadowNotification {
       s.setSmallIcon(smallIcon);
       s.setTicker(ticker);
       s.setWhen(when);
+      s.setShowWhen(showWhen);
       s.setContentInfo(contentInfo);
       s.setActions(actions);
       s.setStyle(style);
       s.setProgress(progress);
       s.setUsesChronometer(usesChronometer);
+      s.setOngoing(ongoing);
     }
     
     @Implementation
@@ -236,6 +259,13 @@ public class ShadowNotification {
     public Builder setSmallIcon(int smallIcon) {
       this.smallIcon = smallIcon;
       directlyOn(realBuilder, Builder.class, "setSmallIcon", int.class).invoke(smallIcon);
+      return realBuilder;
+    }
+
+    @Implementation
+    public Builder setOngoing(boolean ongoing) {
+      this.ongoing = ongoing;
+      directlyOn(realBuilder, Builder.class, "setOngoing", boolean.class).invoke(ongoing);
       return realBuilder;
     }
 
@@ -292,8 +322,15 @@ public class ShadowNotification {
       directlyOn(realBuilder, Builder.class, "setUsesChronometer", boolean.class).invoke(usesChronometer);
       return realBuilder;
     }
+
+    @Implementation
+    public Builder setShowWhen(boolean showWhen) {
+      this.showWhen = showWhen;
+      directlyOn(realBuilder, Builder.class, "setShowWhen", boolean.class).invoke(showWhen);
+      return realBuilder;
+    }
   }
-  
+
   @Implements(Style.class)
   public static class ShadowStyle {
 

@@ -121,6 +121,48 @@ public class ContextWrapperTest {
   }
 
   @Test
+  public void sendOrderedBroadcast_shouldSendByPriority() throws Exception {
+    String action = "test";
+
+    IntentFilter lowFilter = new IntentFilter(action);
+    lowFilter.setPriority(1);
+    BroadcastReceiver lowReceiver = broadcastReceiver("Low");
+    contextWrapper.registerReceiver(lowReceiver, lowFilter);
+
+    IntentFilter highFilter = new IntentFilter(action);
+    highFilter.setPriority(2);
+    BroadcastReceiver highReceiver = broadcastReceiver("High");
+    contextWrapper.registerReceiver(highReceiver, highFilter);
+
+    contextWrapper.sendOrderedBroadcast(new Intent(action), null);
+    transcript.assertEventsSoFar("High notified of test", "Low notified of test");
+  }
+
+  @Test
+  public void orderedBroadcasts_shouldAbort() throws Exception {
+    String action = "test";
+
+    IntentFilter lowFilter = new IntentFilter(action);
+    lowFilter.setPriority(1);
+    BroadcastReceiver lowReceiver = broadcastReceiver("Low");
+    contextWrapper.registerReceiver(lowReceiver, lowFilter);
+
+    IntentFilter highFilter = new IntentFilter(action);
+    highFilter.setPriority(2);
+    BroadcastReceiver highReceiver = new BroadcastReceiver() {
+      @Override
+      public void onReceive(Context context, Intent intent) {
+        transcript.add("High" + " notified of " + intent.getAction());
+        abortBroadcast();
+      }
+    };
+    contextWrapper.registerReceiver(highReceiver, highFilter);
+
+    contextWrapper.sendOrderedBroadcast(new Intent(action), null);
+    transcript.assertEventsSoFar("High notified of test");
+  }
+
+  @Test
   public void unregisterReceiver_shouldUnregisterReceiver() throws Exception {
     BroadcastReceiver receiver = broadcastReceiver("Larry");
 
@@ -372,5 +414,43 @@ public class ContextWrapperTest {
     final SharedPreferences pref2 = contextWrapper.getSharedPreferences("pref2", Context.MODE_PRIVATE);
 
     assertThat(pref1).isNotSameAs(pref2);
+  }
+
+  @Test
+  public void sendBroadcast_shouldOnlySendIntentWithTypeWhenReceiverMatchesType()
+          throws IntentFilter.MalformedMimeTypeException {
+
+    final BroadcastReceiver viewAllTypesReceiver = broadcastReceiver("ViewActionWithAnyTypeReceiver");
+    final IntentFilter allTypesIntentFilter = intentFilter("view");
+    allTypesIntentFilter.addDataType("*/*");
+    contextWrapper.registerReceiver(viewAllTypesReceiver, allTypesIntentFilter);
+
+    final BroadcastReceiver imageReceiver = broadcastReceiver("ImageReceiver");
+    final IntentFilter imageIntentFilter = intentFilter("view");
+    imageIntentFilter.addDataType("img/*");
+    contextWrapper.registerReceiver(imageReceiver, imageIntentFilter);
+
+    final BroadcastReceiver videoReceiver = broadcastReceiver("VideoReceiver");
+    final IntentFilter videoIntentFilter = intentFilter("view");
+    videoIntentFilter.addDataType("video/*");
+    contextWrapper.registerReceiver(videoReceiver, videoIntentFilter);
+
+    final BroadcastReceiver viewReceiver = broadcastReceiver("ViewActionReceiver");
+    final IntentFilter viewIntentFilter = intentFilter("view");
+    contextWrapper.registerReceiver(viewReceiver, viewIntentFilter);
+
+    final Intent imageIntent = new Intent("view");
+    imageIntent.setType("img/jpeg");
+    contextWrapper.sendBroadcast(imageIntent);
+
+    final Intent videoIntent = new Intent("view");
+    videoIntent.setType("video/mp4");
+    contextWrapper.sendBroadcast(videoIntent);
+
+    transcript.assertEventsSoFar(
+            "ViewActionWithAnyTypeReceiver notified of view",
+            "ImageReceiver notified of view",
+            "ViewActionWithAnyTypeReceiver notified of view",
+            "VideoReceiver notified of view");
   }
 }

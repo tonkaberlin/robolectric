@@ -59,7 +59,7 @@ public class DrawableResourceLoaderTest {
     drawableResourceLoader.findDrawableResources(testResources());
 
     assertNotNull(drawableNodes.get(new ResName(TEST_PACKAGE, "drawable", "rainbow"), ""));
-    assertEquals(32, drawableNodes.size());
+    assertEquals(19, drawableNodes.size());
   }
 
   @Test
@@ -92,9 +92,7 @@ public class DrawableResourceLoaderTest {
     assertThat(drawable).isInstanceOf(LayerDrawable.class);
     assertEquals(8, ((LayerDrawable) drawable).getNumberOfLayers());
 
-    Configuration configuration = new Configuration();
-    shadowOf(configuration).overrideQualifiers("xlarge");
-    resources.updateConfiguration(configuration, new DisplayMetrics());
+    shadowOf(resources.getAssets()).setQualifiers("xlarge");
 
     assertEquals(6, ((LayerDrawable) resources.getDrawable(R.drawable.rainbow)).getNumberOfLayers());
   }

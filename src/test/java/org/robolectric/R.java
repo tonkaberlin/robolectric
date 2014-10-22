@@ -18,69 +18,70 @@ public final class R {
     public static final int false_checkbox = 0x10008;
     public static final int default_checkbox = 0x10009;
     public static final int image = 0x1000a;
-    public static final int icon = 0x1000b;
-    public static final int text1 = 0x1000c;
-    public static final int button = 0x1000d;
-    public static final int invalid_onclick_button = 0x1000e;
-    public static final int edit_text = 0x1000f;
-    public static final int edit_text2 = 0x10010;
-    public static final int outer_merge = 0x10011;
-    public static final int web_view = 0x10012;
+    public static final int mipmapImage = 0x1000b;
+    public static final int icon = 0x1000c;
+    public static final int text1 = 0x1000d;
+    public static final int button = 0x1000e;
+    public static final int invalid_onclick_button = 0x1000f;
+    public static final int edit_text = 0x10010;
+    public static final int edit_text2 = 0x10011;
+    public static final int outer_merge = 0x10012;
+    public static final int web_view = 0x10013;
 
-    public static final int black_text_view = 0x10013;
-    public static final int white_text_view = 0x10014;
-    public static final int grey_text_view = 0x10015;
+    public static final int black_text_view = 0x10014;
+    public static final int white_text_view = 0x10015;
+    public static final int grey_text_view = 0x10016;
 
-    public static final int black_text_view_hint = 0x10016;
-    public static final int white_text_view_hint = 0x10017;
-    public static final int grey_text_view_hint = 0x10018;
+    public static final int black_text_view_hint = 0x10017;
+    public static final int white_text_view_hint = 0x10018;
+    public static final int grey_text_view_hint = 0x10019;
 
-    public static final int textStyle = 0x10019;
-    public static final int textStyle2 = 0x1001a;
-    public static final int textStyle3 = 0x1001b;
+    public static final int textStyle = 0x1001a;
+    public static final int textStyle2 = 0x1001b;
+    public static final int textStyle3 = 0x1001c;
 
-    public static final int test_menu_1 = 0x1001c;
-    public static final int test_menu_2 = 0x1001d;
-    public static final int test_menu_3 = 0x1001e;
+    public static final int test_menu_1 = 0x1001d;
+    public static final int test_menu_2 = 0x1001e;
+    public static final int test_menu_3 = 0x1001f;
 
-    public static final int group_id_1 = 0x1001f;
+    public static final int group_id_1 = 0x10020;
 
-    public static final int test_submenu_1 = 0x10020;
+    public static final int test_submenu_1 = 0x10021;
 
-    public static final int fragment = 0x10021;
-    public static final int dynamic_fragment_container = 0x10022;
-    public static final int content_view = 0x10023;
+    public static final int fragment = 0x10022;
+    public static final int dynamic_fragment_container = 0x10023;
+    public static final int content_view = 0x10024;
 
-    public static final int portrait = 0x10024;
-    public static final int landscape = 0x10025;
-    public static final int tacos = 0x10026;
-    public static final int burritos = 0x10027;
-    public static final int lam_container = 0x10028;
-    public static final int lam_inner_contents = 0x10029;
-    public static final int my_fragment = 0x1002a;
-    public static final int my_landscape_text = 0x1002b;
+    public static final int portrait = 0x10025;
+    public static final int landscape = 0x10026;
+    public static final int tacos = 0x10027;
+    public static final int burritos = 0x10028;
+    public static final int lam_container = 0x10029;
+    public static final int lam_inner_contents = 0x1002a;
+    public static final int my_fragment = 0x1002b;
+    public static final int my_landscape_text = 0x1002c;
 
-    public static final int itemType = 0x1002c;
-    public static final int scrollBars = 0x1002d;
-    public static final int keycode = 0x1002e;
-    public static final int aspectRatio = 0x1002f;
-    public static final int aspectRatioEnabled = 0x10030;
+    public static final int itemType = 0x1002d;
+    public static final int scrollBars = 0x1002e;
+    public static final int keycode = 0x1002f;
+    public static final int aspectRatio = 0x10030;
+    public static final int aspectRatioEnabled = 0x10031;
 
-    public static final int marsupial = 0x10031;
-    public static final int ungulate = 0x10032;
+    public static final int marsupial = 0x10032;
+    public static final int ungulate = 0x10033;
 
-    public static final int custom_view = 0x10033;
+    public static final int custom_view = 0x10034;
 
-    public static final int custom_title_text = 0x10034;
+    public static final int custom_title_text = 0x10035;
 
-    public static final int remote_view_1 = 0x10035;
-    public static final int remote_view_2 = 0x10036;
-    public static final int remote_view_3 = 0x10037;
+    public static final int remote_view_1 = 0x10036;
+    public static final int remote_view_2 = 0x10037;
+    public static final int remote_view_3 = 0x10038;
 
-    public static final int hello = 0x10038;
-    public static final int world = 0x10039;
+    public static final int hello = 0x10039;
+    public static final int world = 0x1003a;
 
-    public static final int list_view_with_enum_scrollbar = 0x1003a;
+    public static final int list_view_with_enum_scrollbar = 0x1003b;
   }
 
   public static final class string {
@@ -137,15 +138,17 @@ public final class R {
     public static final int foreground = 0x10401;
     public static final int grey42 = 0x10402;
     public static final int black = 0x10403;
-    public static final int white = 0x10404;
-    public static final int clear = 0x10405;
-    public static final int color_with_alpha = 0x10406;
-    public static final int android_namespaced_black = 0x10407;
-    public static final int android_namespaced_transparent = 0x10408;
-    public static final int android_red = 0x10409;
-    public static final int test_color_1 = 0x1040a;
-    public static final int color_state_list = 0x1040b;
-    public static final int list_separator = 0x1040c;
+    public static final int blue = 0x10404;
+    public static final int white = 0x10405;
+    public static final int clear = 0x10406;
+    public static final int color_with_alpha = 0x10407;
+    public static final int android_namespaced_black = 0x10408;
+    public static final int android_namespaced_transparent = 0x10409;
+    public static final int android_red = 0x1040a;
+    public static final int test_color_1 = 0x1040b;
+    public static final int color_state_list = 0x1040c;
+    public static final int list_separator = 0x1040d;
+    public static final int custom_state_view_text_color = 0x1040e;
   }
 
   public static final class drawable {
@@ -209,6 +212,8 @@ public final class R {
     public static final int activity_main = 0x10624;
     public static final int activity_main_1 = 0x10625;
     public static final int ordinal_scrollbar = 0x10626;
+    public static final int custom_layout5 = 0x10627;
+    public static final int custom_layout6 = 0x10628;
   }
 
   public static final class anim {
@@ -240,6 +245,9 @@ public final class R {
     public static final int quitKeyCombo = 0x10a09;
     public static final int responses = 0x10a0a;
     public static final int animalStyle = 0x10a0b;
+    public static final int stateFoo = 0x10a0c;
+    public static final int someLayoutOne = 0x10a0d;
+    public static final int someLayoutTwo = 0x10a0e;
   }
 
   public static final class menu {
@@ -323,6 +331,8 @@ public final class R {
     public static final int Gastropod = 0x11007;
     public static final int Theme_ThirdTheme = 0x11008;
     public static final int MyBlackTheme = 0x11009;
+    public static final int MyBlueTheme = 0x1100a;
+    public static final int IndirectButtonStyle = 0x1100b;
   }
 
   public static final class fraction {
@@ -334,5 +344,9 @@ public final class R {
     public static final int fifth_as_reference = 0x11105;
     public static final int fifth_of_parent = 0x11106;
     public static final int fifth_of_parent_as_reference = 0x11107;
+  }
+
+  public static final class mipmap {
+    public static final int robolectric = 0x11200;
   }
 }

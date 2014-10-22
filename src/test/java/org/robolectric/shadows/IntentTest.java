@@ -5,6 +5,7 @@ import android.content.ComponentName;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Parcel;
 import android.os.Parcelable;
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -100,9 +101,17 @@ public class IntentTest {
     TestSerializable serializable = new TestSerializable("some string");
     assertSame(intent, intent.putExtra("foo", serializable));
     assertEquals(serializable, intent.getExtras().get("foo"));
-    assertNotSame(serializable, intent.getExtras().get("foo"));
     assertEquals(serializable, intent.getSerializableExtra("foo"));
-    assertNotSame(serializable, intent.getSerializableExtra("foo"));
+  }
+
+  @Test
+  public void testSerializableOfParcelableExtra() throws Exception {
+    Intent intent = new Intent();
+    ArrayList<Parcelable> serializable = new ArrayList();
+    serializable.add(new TestParcelable(12));
+    assertSame(intent, intent.putExtra("foo", serializable));
+    assertEquals(serializable, intent.getExtras().get("foo"));
+    assertEquals(serializable, intent.getSerializableExtra("foo"));
   }
 
   @Test
@@ -182,6 +191,15 @@ public class IntentTest {
     assertSame(intent, intent.setData(uri));
     assertSame(uri, intent.getData());
     assertNull(intent.getType());
+  }
+  
+  @Test
+  public void testGetScheme() throws Exception {
+    Intent intent = new Intent();
+    Uri uri = Uri.parse("http://robolectric.org");
+    assertSame(intent, intent.setData(uri));
+    assertSame(uri, intent.getData());
+    assertEquals("http", intent.getScheme());
   }
 
   @Test
@@ -490,10 +508,65 @@ public class IntentTest {
   }
 
   @Test
-  public void constructor_shouldSetComponentAndAction() {
-    Intent intent = new Intent("roboaction", null, Robolectric.application, Activity.class);
+  public void constructor_shouldSetComponentAndActionAndData() {
+    Intent intent = new Intent("roboaction", Uri.parse("http://www.robolectric.org"), Robolectric.application, Activity.class);
     assertThat(shadowOf(intent).getComponent()).isEqualTo(new ComponentName("org.robolectric", "android.app.Activity"));
     assertThat(shadowOf(intent).getAction()).isEqualTo("roboaction");
+    assertThat(shadowOf(intent).getData()).isEqualTo(Uri.parse("http://www.robolectric.org"));
+  }
+
+  @Test
+  public void putExtra_shouldBeChainable() {
+    // Ensure that all putExtra methods return the Intent properly and can therefore be chained
+    // without causing NPE's
+    Intent intent = new Intent();
+
+    assertThat(intent.putExtra("double array", new double[] { 0.0 })).isEqualTo(intent);
+    assertThat(intent.putExtra("int", 0)).isEqualTo(intent);
+    assertThat(intent.putExtra("CharSequence", new TestCharSequence("test"))).isEqualTo(intent);
+    assertThat(intent.putExtra("char", 'a')).isEqualTo(intent);
+    assertThat(intent.putExtra("Bundle", new Bundle())).isEqualTo(intent);
+    assertThat(intent.putExtra("Parcelable array", new Parcelable[] { new TestParcelable(0) }))
+        .isEqualTo(intent);
+    assertThat(intent.putExtra("Serializable", new TestSerializable("test"))).isEqualTo(intent);
+    assertThat(intent.putExtra("int array", new int[] { 0 })).isEqualTo(intent);
+    assertThat(intent.putExtra("float", 0f)).isEqualTo(intent);
+    assertThat(intent.putExtra("byte array", new byte[] { 0 })).isEqualTo(intent);
+    assertThat(intent.putExtra("long array", new long[] { 0L })).isEqualTo(intent);
+    assertThat(intent.putExtra("Parcelable", new TestParcelable(0))).isEqualTo(intent);
+    assertThat(intent.putExtra("float array", new float[] { 0f })).isEqualTo(intent);
+    assertThat(intent.putExtra("long", 0L)).isEqualTo(intent);
+    assertThat(intent.putExtra("String array", new String[] { "test" })).isEqualTo(intent);
+    assertThat(intent.putExtra("boolean", true)).isEqualTo(intent);
+    assertThat(intent.putExtra("boolean array", new boolean[] { true })).isEqualTo(intent);
+    assertThat(intent.putExtra("short", (short) 0)).isEqualTo(intent);
+    assertThat(intent.putExtra("double", 0.0)).isEqualTo(intent);
+    assertThat(intent.putExtra("short array", new short[] { 0 })).isEqualTo(intent);
+    assertThat(intent.putExtra("String", "test")).isEqualTo(intent);
+    assertThat(intent.putExtra("byte", (byte) 0)).isEqualTo(intent);
+    assertThat(intent.putExtra("char array", new char[] { 'a' })).isEqualTo(intent);
+    assertThat(intent.putExtra("CharSequence array",
+        new CharSequence[] { new TestCharSequence("test") }))
+        .isEqualTo(intent);
+  }
+
+  @Test
+  public void getExtra_shouldWorkAfterParcel() {
+    ComponentName componentName = new ComponentName("barcomponent", "compclass");
+    Uri parsed = Uri.parse("https://foo.bar");
+    Intent intent = new Intent();
+    intent.putExtra("key", 123);
+    intent.setAction("Foo");
+    intent.setComponent(componentName);
+    intent.setData(parsed);
+    Parcel parcel = Parcel.obtain();
+    parcel.writeParcelable(intent, 0);
+    parcel.setDataPosition(0);
+    intent = parcel.readParcelable(getClass().getClassLoader());
+    assertThat(intent.getIntExtra("key", 0)).isEqualTo(123);
+    assertThat(intent.getAction()).isEqualTo("Foo");
+    assertThat(intent.getComponent()).isEqualTo(componentName);
+    assertThat(intent.getData()).isEqualTo(parsed);
   }
 
   private static class TestSerializable implements Serializable {

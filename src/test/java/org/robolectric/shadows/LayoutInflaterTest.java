@@ -32,6 +32,7 @@ import org.robolectric.TestRunners;
 import org.robolectric.annotation.Config;
 import org.robolectric.res.ResName;
 import org.robolectric.res.ResourceLoader;
+import org.robolectric.util.CustomStateView;
 import org.robolectric.util.CustomView;
 import org.robolectric.util.CustomView2;
 import org.robolectric.util.TestUtil;
@@ -223,6 +224,23 @@ public class LayoutInflaterTest {
   }
 
   @Test
+  public void shouldConstructCustomViewsWithCustomState() throws Exception {
+    CustomStateView view = (CustomStateView) inflate("custom_layout6");
+    assertThat(view.getDrawableState()).doesNotContain(R.attr.stateFoo);
+
+    view.isFoo = true;
+    view.refreshDrawableState();
+
+    assertThat(view.getDrawableState()).contains(R.attr.stateFoo);
+  }
+
+  @Test
+  public void shouldConstructCustomViewsWithAttributesInResAutoNamespace() throws Exception {
+    CustomView view = (CustomView) inflate("custom_layout5");
+    assertThat(view.attributeResourceValue).isEqualTo(R.string.hello);
+  }
+
+  @Test
   public void shouldConstructCustomViewsWithAttributesWithURLEncodedNamespaces() throws Exception {
     CustomView view = (CustomView) inflate("custom_layout4")
         .findViewById(R.id.custom_view);
@@ -268,6 +286,14 @@ public class LayoutInflaterTest {
     ImageView imageView = (ImageView) mediaView.findViewById(R.id.image);
     BitmapDrawable drawable = (BitmapDrawable) imageView.getDrawable();
     assertThat(shadowOf(drawable.getBitmap()).getCreatedFromResId()).isEqualTo(R.drawable.an_image);
+  }
+
+  @Test
+  public void testImageViewSrcIsSetFromMipmap() throws Exception {
+    View mediaView = inflate("main");
+    ImageView imageView = (ImageView) mediaView.findViewById(R.id.mipmapImage);
+    BitmapDrawable drawable = (BitmapDrawable) imageView.getDrawable();
+    assertThat(shadowOf(drawable.getBitmap()).getCreatedFromResId()).isEqualTo(R.mipmap.robolectric);
   }
 
   @Test

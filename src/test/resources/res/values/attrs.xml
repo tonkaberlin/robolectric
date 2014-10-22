@@ -29,6 +29,9 @@
 
     <!-- Test the same attr name as android namespace with different format -->
     <attr name="typeface" format="string" />
+
+    <attr name="someLayoutOne" format="reference" />
+    <attr name="someLayoutTwo" format="reference" />
   </declare-styleable>
 
   <attr name="gravity">
@@ -42,4 +45,8 @@
   </attr>
 
   <attr name="responses" format="reference"/>
+
+  <declare-styleable name="CustomStateView">
+    <attr name="stateFoo" format="boolean" />
+  </declare-styleable>
 </resources>
